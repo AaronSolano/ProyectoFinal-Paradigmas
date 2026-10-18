@@ -1,0 +1,36 @@
+---
+description: Regla de Flujo de Trabajo para "Sube cambios"
+globs: *
+alwaysApply: true
+---
+
+### Regla de Flujo de Trabajo: "Sube cambios"
+
+Cuando reciba la instrucción exacta "Sube cambios", se ejecutará estrictamente el siguiente procedimiento automatizado:
+
+1. **Validación de entorno:**
+   - Confirmar que el directorio de trabajo se encuentra en la rama `Feature-Aaron`.
+   - Si se encuentra en otra rama, detener el proceso e informar el estado actual sin ejecutar cambios.
+
+2. **Guardado de trabajo local (Commit previo):**
+   - Ejecutar: `git add .`
+   - Generar un commit con un mensaje descriptivo y conciso de los cambios: `git commit -m "<descripción clara de los cambios realizados>"`.
+
+3. **Verificación y sincronización con origin dev:**
+   - Descargar el estado más reciente del repositorio: `git fetch origin dev`.
+   - Traer y actualizar la rama local `dev` con respecto a `origin/dev`: `git fetch origin dev:dev`.
+   - Integrar los cambios de `dev` dentro de `Feature-Aaron`: `git merge dev`.
+
+4. **Gestión de conflictos:**
+   - Si surgen conflictos de integración:
+     1. Detener el flujo de subida de inmediato.
+     2. Reportar al usuario cuáles archivos presentan colisiones y en qué bloques de código.
+     3. Aplicar las correcciones correspondientes.
+     4. Concluir el merge commit tras la resolución.
+
+5. **Publicación limpia en origin dev:**
+   - Pasar a la rama local `dev`: `git checkout dev`.
+   - Integrar los cambios limpios y probados de `Feature-Aaron`: `git merge Feature-Aaron`.
+   - Subir los cambios al remoto: `git push origin dev`.
+   - Regresar de inmediato a la rama de trabajo: `git checkout Feature-Aaron`.
+   - Notificar al usuario la confirmación de la subida exitosa.
