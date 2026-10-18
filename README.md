@@ -1,4 +1,3 @@
-
 ## 📌 Visión General
 
 ProfeLink Evaluaciones es una solución distribuida en tiempo real que permite a los docentes lanzar dinámicas de evaluación rápida tipo Verdadero/Falso durante las sesiones sincrónicas o asincrónicas.
@@ -16,7 +15,6 @@ ProfeLink Evaluaciones es una solución distribuida en tiempo real que permite a
 - **Testing Exhaustivo:** Suites unitarias y de integración con **Jest**, y pruebas end-to-end con **Playwright**.
 
 ---
-
 
 ## 🛠️ Stack Tecnológico
 
