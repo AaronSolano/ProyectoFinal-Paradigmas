@@ -39,10 +39,6 @@ Thumbs.db
 !.vscode/settings.json
 .idea/
 
-# Obsidian local cache / state (keep plugins and theme, ignore workspace state)
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/cache
 
 # Antigravity agent files
 .agents/
