@@ -1,0 +1,49 @@
+# Blueprint de Render. No despliega nada por sí solo.
+# Los secretos quedan vacíos a propósito: se completan en el panel.
+
+services:
+  - type: web
+    name: verix-auth
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/auth-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /reference/openapi.json
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PRISMA_AUTH_SCHEMA
+        value: verix_auth
+      - key: DATABASE_URL_AUTH
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_AUDIENCE
+        value: profelink-game-api
+      - key: JWT_ISSUER
+        value: profelink-auth-service
+      - key: CORS_ORIGINS
+        sync: false
+
+  - type: web
+    name: verix-game
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/game-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /reference/openapi.json
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL_GAME
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_AUDIENCE
+        value: profelink-game-api
+      - key: JWT_ISSUER
+        value: profelink-auth-service
+      - key: UPLOAD_DIR
+        value: /app/uploads
+      - key: CORS_ORIGINS
+        sync: false

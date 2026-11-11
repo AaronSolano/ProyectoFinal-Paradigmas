@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@profelink/game-prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_GAME")
+  schemas  = ["game"]
+}
+
+model Quiz {
+  id          String     @id @default(uuid()) @db.Uuid
+  ownerId     String     @map("owner_id") @db.Uuid
+  title       String
+  description String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  questions   Question[]
+
+  @@index([ownerId])
+  @@map("quizzes")
+  @@schema("game")
+}
+
+model Question {
+  id               String   @id @default(uuid()) @db.Uuid
+  quizId           String   @map("quiz_id") @db.Uuid
+  statement        String
+  imageUrl         String?  @map("image_url")
+  correctAnswer    Boolean  @map("correct_answer")
+  timeLimitSeconds Int      @map("time_limit_seconds")
+  sortOrder        Int      @default(0) @map("sort_order")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  quiz             Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@map("questions")
+  @@schema("game")
+}
+
+model GameSession {
+  id         String   @id @default(uuid()) @db.Uuid
+  roomCode   String   @unique @map("room_code")
+  quizId     String   @map("quiz_id") @db.Uuid
+  hostId     String   @map("host_id") @db.Uuid
+  status     String
+  startedAt  DateTime @default(now()) @map("started_at")
+  finishedAt DateTime @map("finished_at")
+  participants SessionParticipant[]
+
+  @@index([quizId])
+  @@map("game_sessions")
+  @@schema("game")
+}
+
+model SessionParticipant {
+  id           String              @id @default(uuid()) @db.Uuid
+  sessionId    String              @map("session_id") @db.Uuid
+  userId       String              @map("user_id") @db.Uuid
+  displayName  String              @map("display_name")
+  finalScore   Int                 @default(0) @map("final_score")
+  session      GameSession         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  answers      ParticipantAnswer[]
+
+  @@unique([sessionId, userId])
+  @@map("session_participants")
+  @@schema("game")
+}
+
+model ParticipantAnswer {
+  id             String             @id @default(uuid()) @db.Uuid
+  participantId  String             @map("participant_id") @db.Uuid
+  questionId     String             @map("question_id") @db.Uuid
+  questionIndex  Int                @map("question_index")
+  answer         Boolean
+  isCorrect      Boolean            @map("is_correct")
+  pointsAwarded  Int                @default(0) @map("points_awarded")
+  participant    SessionParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, questionId])
+  @@map("participant_answers")
+  @@schema("game")
+}
+
+enum ChallengeCategory {
+  cultura_general @map("cultura-general")
+  ciencias
+  tecnologia
+  historia
+  geografia
+  deportes
+
+  @@schema("game")
+}
+
+enum ChallengeDifficulty {
+  facil
+  intermedia
+  dificil
+
+  @@schema("game")
+}
+
+model ChallengePrompt {
+  id                        String              @id @default(uuid()) @db.Uuid
+  statement                 String              @unique
+  correctAnswer             Boolean             @map("correct_answer")
+  category                  ChallengeCategory
+  difficulty                ChallengeDifficulty
+  suggestedTimeLimitSeconds Int                 @map("suggested_time_limit_seconds")
+  imageUrl                  String?             @map("image_url")
+  createdAt                 DateTime            @default(now()) @map("created_at")
+  updatedAt                 DateTime            @updatedAt @map("updated_at")
+
+  @@index([category, difficulty])
+  @@map("challenge_prompts")
+  @@schema("game")
+}
