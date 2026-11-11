@@ -32,8 +32,10 @@ function buildRoom(): LiveRoom {
     currentQuestionIndex: 0,
     questionExpiresAt: Date.now() + 30_000,
     answeredUserIds: new Set(),
+    openedQuestionIndexes: new Set(),
     answersByQuestion: new Map(),
     closeTimer: null,
+    finishing: false,
     lastActivityAt: Date.now(),
   };
 }
@@ -64,6 +66,18 @@ describe("GameEngineService answer validation", () => {
     const duplicate = engine.submitAnswer(room, "student-1", false);
     expect(duplicate.ack.accepted).toBe(false);
     expect(duplicate.ack.reason).toBe("duplicate");
+    expect(room.participants.get("student-1")?.score).toBe(1);
+  });
+
+  it("does not award points again when the recorded answer remains", () => {
+    const room = buildRoom();
+    engine.submitAnswer(room, "student-1", true);
+    room.answeredUserIds = new Set();
+
+    const again = engine.submitAnswer(room, "student-1", true);
+
+    expect(again.ack.accepted).toBe(false);
+    expect(again.ack.reason).toBe("duplicate");
     expect(room.participants.get("student-1")?.score).toBe(1);
   });
 

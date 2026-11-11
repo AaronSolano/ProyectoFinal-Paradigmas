@@ -27,7 +27,9 @@ export type LiveRoom = {
   currentQuestionIndex: number | null;
   questionExpiresAt: number | null;
   answeredUserIds: Set<string>;
+  openedQuestionIndexes: Set<number>;
   answersByQuestion: Map<number, Map<string, { answer: boolean; points: number }>>;
   closeTimer: ReturnType<typeof setTimeout> | null;
+  finishing: boolean;
   lastActivityAt: number;
 };

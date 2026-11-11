@@ -27,3 +27,10 @@
 - [x] 5.2 Write unit tests for scoring rules and anti-double voting in Jest (`answer-validation.spec.ts`).
 - [x] 5.3 Write integration tests for concurrent room isolation (`concurrent-rooms.e2e-spec.ts`).
 - [x] 5.4 Write integration tests for reconnection flow (`reconnection.spec.ts`).
+
+## 6. Scoring integrity before live questions
+
+- [x] 6.1 Reject reopening a used `questionIndex` so a participant cannot score twice on the same question.
+- [x] 6.2 Exclude the host from the live and historical leaderboard and podium, while keeping the host in the participant list.
+- [x] 6.3 Do not add a participant cap. A 200-student load test remains deferred and must use an isolated database.
+- [x] 6.4 Finish only after every question is closed, persist before `game:finish`, and reject a repeated or premature finish without a second write.

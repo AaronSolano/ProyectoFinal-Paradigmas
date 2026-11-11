@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AuthUser } from "../entities/auth-user";
 import { RoomManagerService } from "../services/realtime/room-manager.service";
 import { CurrentUser } from "./decorators/current-user.decorator";
+import { HostRoleGuard } from "./guards/host-role.guard";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 
 @ApiTags("live-sessions")
@@ -13,6 +14,7 @@ export class LiveSessionController {
   constructor(private readonly rooms: RoomManagerService) {}
 
   @Post()
+  @UseGuards(HostRoleGuard)
   createSession(@CurrentUser() user: AuthUser, @Param("quizId") quizId: string) {
     return this.rooms.createLiveSession(user, quizId);
   }

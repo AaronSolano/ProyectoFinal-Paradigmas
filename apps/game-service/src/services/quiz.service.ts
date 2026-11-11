@@ -10,12 +10,14 @@ import { CreateQuestionDto } from "../presentation/dto/create-question.dto";
 import { CreateQuizDto } from "../presentation/dto/create-quiz.dto";
 import { UpdateQuestionDto } from "../presentation/dto/update-question.dto";
 import { UpdateQuizDto } from "../presentation/dto/update-quiz.dto";
+import { assertHost } from "./host-access";
 
 @Injectable()
 export class QuizService {
   constructor(private readonly quizzes: QuizRepository) {}
 
-  createQuiz(user: AuthUser, dto: CreateQuizDto): Promise<Quiz> {
+  async createQuiz(user: AuthUser, dto: CreateQuizDto): Promise<Quiz> {
+    assertHost(user);
     return this.quizzes.createQuiz({
       title: dto.title,
       description: dto.description,
@@ -34,6 +36,7 @@ export class QuizService {
   }
 
   async updateQuiz(user: AuthUser, quizId: string, dto: UpdateQuizDto): Promise<Quiz> {
+    assertHost(user);
     const quiz = await this.requireQuiz(quizId);
     this.assertOwner(user, quiz);
     return this.quizzes.updateQuiz(quizId, {
@@ -43,6 +46,7 @@ export class QuizService {
   }
 
   async deleteQuiz(user: AuthUser, quizId: string): Promise<Quiz> {
+    assertHost(user);
     const quiz = await this.requireQuiz(quizId);
     this.assertOwner(user, quiz);
     return this.quizzes.deleteQuiz(quizId);
@@ -58,6 +62,7 @@ export class QuizService {
     quizId: string,
     dto: CreateQuestionDto,
   ): Promise<Question> {
+    assertHost(user);
     await this.getQuiz(user, quizId);
     return this.quizzes.createQuestion({
       quiz: { connect: { id: quizId } },
@@ -75,6 +80,7 @@ export class QuizService {
     questionId: string,
     dto: UpdateQuestionDto,
   ): Promise<Question> {
+    assertHost(user);
     await this.getQuiz(user, quizId);
     const question = await this.requireQuestion(questionId, quizId);
     return this.quizzes.updateQuestion(question.id, {
@@ -91,6 +97,7 @@ export class QuizService {
     quizId: string,
     questionId: string,
   ): Promise<Question> {
+    assertHost(user);
     await this.getQuiz(user, quizId);
     const question = await this.requireQuestion(questionId, quizId);
     return this.quizzes.deleteQuestion(question.id);

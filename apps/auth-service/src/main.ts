@@ -4,9 +4,12 @@ import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { apiReference } from "@scalar/nestjs-api-reference";
 import { AppModule } from "./app.module";
+import { enableBrowserCors } from "./http-cors";
+import { resolveListenPort } from "./listen-port";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  enableBrowserCors(app);
   const config = app.get(ConfigService);
 
   app.setGlobalPrefix("api");
@@ -42,8 +45,8 @@ async function bootstrap() {
     }),
   );
 
-  const port = config.get<number>("AUTH_PORT", 3001);
-  await app.listen(port);
+  const port = resolveListenPort(process.env.PORT, config.get("AUTH_PORT"), 3001);
+  await app.listen(port, "0.0.0.0");
 }
 
 bootstrap();

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsBoolean, IsInt, IsOptional, IsString, Min, MinLength } from "class-validator";
+import { IsBoolean, IsInt, IsOptional, IsString, Max, Min, MinLength } from "class-validator";
 
 export class UpdateQuestionDto {
   @ApiPropertyOptional()
@@ -18,10 +18,11 @@ export class UpdateQuestionDto {
   @IsBoolean()
   correctAnswer?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ minimum: 5, maximum: 120 })
   @IsOptional()
-  @IsInt()
-  @Min(5)
+  @IsInt({ message: "El tiempo debe ser un entero entre 5 y 120 segundos." })
+  @Min(5, { message: "El tiempo debe ser un entero entre 5 y 120 segundos." })
+  @Max(120, { message: "El tiempo debe ser un entero entre 5 y 120 segundos." })
   timeLimitSeconds?: number;
 
   @ApiPropertyOptional()

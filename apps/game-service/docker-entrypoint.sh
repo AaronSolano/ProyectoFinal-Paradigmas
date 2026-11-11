@@ -8,6 +8,10 @@ fi
 
 export DATABASE_URL="$DATABASE_URL_GAME"
 
+if [ -n "${PORT:-}" ]; then
+  export GAME_PORT="$PORT"
+fi
+
 echo "[game-service] Aplicando migraciones Prisma..."
 npx --yes prisma@6.19.3 migrate deploy --schema=./prisma/schema.prisma
 

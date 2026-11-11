@@ -3,10 +3,13 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
 FROM base AS build
+ARG PRISMA_AUTH_SCHEMA=auth
+ENV PRISMA_AUTH_SCHEMA=$PRISMA_AUTH_SCHEMA
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/shared-dtos ./packages/shared-dtos
 COPY apps/auth-service ./apps/auth-service
 RUN pnpm install --frozen-lockfile --filter @profelink/shared-dtos --filter @profelink/auth-service \
+  && if [ "$PRISMA_AUTH_SCHEMA" != "auth" ]; then pnpm --filter @profelink/auth-service exec ts-node --transpile-only src/deploy/rewrite-auth-schema.ts; fi \
   && pnpm --filter @profelink/shared-dtos build \
   && pnpm --filter @profelink/auth-service prisma:generate \
   && pnpm --filter @profelink/auth-service build \

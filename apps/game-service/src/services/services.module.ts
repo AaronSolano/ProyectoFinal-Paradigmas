@@ -3,11 +3,15 @@ import { GameEngineService } from "./realtime/game-engine.service";
 import { InMemoryRoomStore } from "./realtime/in-memory-room.store";
 import { RoomManagerService } from "./realtime/room-manager.service";
 import { LocalStorageService } from "./local-storage.service";
+import { ChallengeBankService } from "./challenge-bank.service";
 import { QuizService } from "./quiz.service";
+import { SessionResultsService } from "./session-results.service";
 
 @Module({
   providers: [
     QuizService,
+    ChallengeBankService,
+    SessionResultsService,
     LocalStorageService,
     InMemoryRoomStore,
     GameEngineService,
@@ -15,6 +19,8 @@ import { QuizService } from "./quiz.service";
   ],
   exports: [
     QuizService,
+    ChallengeBankService,
+    SessionResultsService,
     LocalStorageService,
     RoomManagerService,
     GameEngineService,

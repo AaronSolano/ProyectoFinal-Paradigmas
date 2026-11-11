@@ -83,3 +83,38 @@ model ParticipantAnswer {
   @@map("participant_answers")
   @@schema("game")
 }
+
+enum ChallengeCategory {
+  cultura_general @map("cultura-general")
+  ciencias
+  tecnologia
+  historia
+  geografia
+  deportes
+
+  @@schema("game")
+}
+
+enum ChallengeDifficulty {
+  facil
+  intermedia
+  dificil
+
+  @@schema("game")
+}
+
+model ChallengePrompt {
+  id                        String              @id @default(uuid()) @db.Uuid
+  statement                 String              @unique
+  correctAnswer             Boolean             @map("correct_answer")
+  category                  ChallengeCategory
+  difficulty                ChallengeDifficulty
+  suggestedTimeLimitSeconds Int                 @map("suggested_time_limit_seconds")
+  imageUrl                  String?             @map("image_url")
+  createdAt                 DateTime            @default(now()) @map("created_at")
+  updatedAt                 DateTime            @updatedAt @map("updated_at")
+
+  @@index([category, difficulty])
+  @@map("challenge_prompts")
+  @@schema("game")
+}

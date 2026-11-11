@@ -30,7 +30,16 @@ La dinámica en vivo exige alta concurrencia y baja latencia. El backend debe so
 - **Decisión**: El servidor calcula `expiresAt = Date.now() + timeLimitSeconds * 1000` y programa un `setTimeout` interno para cerrar la pregunta si el host no lo hace manualmente antes.
 - **Racional**: Elimina cualquier posibilidad de manipulación del reloj desde el cliente del alumno.
 
+### 4. Una sola apertura por pregunta
+- **Decisión**: `game:start_question` rechaza un `questionIndex` que ya fue abierto, esté la pregunta activa o cerrada, y no reinicia sus respuestas. Un índice nuevo sigue el avance secuencial y conserva el temporizador único de la sala. Si una respuesta ya está registrada para ese participante y esa pregunta, el motor la rechaza como duplicada y no suma puntos otra vez.
+- **Racional**: reabrir el mismo índice vaciaba el conjunto de respondidos y permitía sumar un punto adicional.
+
+### 5. El anfitrión no compite
+- **Decisión**: `leaderboard` y `podium` excluyen al `hostId`. El anfitrión permanece en la lista de participantes con rol `HOST`. El resultado histórico aplica la misma exclusión al ordenar. No se agrega un cupo de participantes. Una sala de 200 estudiantes más el profesor queda para una prueba de carga posterior, en una base aislada.
+- **Racional**: el profesor controla la partida. Incluirlo en la clasificación lo hacía competir, a menudo con puntaje cero.
+
 ## Risks / Trade-offs
 
 - **[Riesgo: Fuga de memoria si una sala queda abandonada]** → **Mitigación**: Implementar mecanismo de auto-limpieza (expiración de sala tras 2 horas de inactividad).
 - **[Riesgo: Respuestas concurrentes en el último milisegundo]** → **Mitigación**: Verificación atómica en `GameEngineService.submitAnswer` comparando `Date.now() <= session.questionExpiresAt`.
+- **[Riesgo: 200 estudiantes no están medidos]** → **Mitigación**: no hay cupo artificial. La prueba de carga queda pendiente y no debe escribir en la base principal.

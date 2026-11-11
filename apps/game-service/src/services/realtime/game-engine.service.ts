@@ -29,7 +29,10 @@ export class GameEngineService {
       };
     }
 
-    if (room.answeredUserIds.has(userId)) {
+    const alreadyRecorded = room.answersByQuestion
+      .get(room.currentQuestionIndex)
+      ?.has(userId);
+    if (room.answeredUserIds.has(userId) || alreadyRecorded) {
       return {
         ack: { accepted: false, reason: "duplicate" },
         pointsAwarded: 0,

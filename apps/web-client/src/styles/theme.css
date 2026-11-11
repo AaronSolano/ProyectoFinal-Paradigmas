@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #070910;
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgba(57, 243, 255, 0.18), transparent 42%),
+    radial-gradient(ellipse at 100% 0%, rgba(255, 43, 214, 0.16), transparent 40%),
+    linear-gradient(rgba(57, 243, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 43, 214, 0.035) 1px, transparent 1px);
+  background-size: auto, auto, 56px 56px, 56px 56px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #39f3ff;
+  outline-offset: 3px;
+}
+
+.vx-rise {
+  animation: vx-rise 700ms ease both;
+}
+
+.vx-shine {
+  animation: vx-shine 2.4s ease-in-out infinite;
+}
+
+@keyframes vx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vx-shine {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-rise,
+  .vx-shine {
+    animation: none;
+  }
+}

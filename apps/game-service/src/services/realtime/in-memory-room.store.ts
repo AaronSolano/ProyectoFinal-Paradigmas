@@ -48,8 +48,10 @@ export class InMemoryRoomStore implements OnModuleDestroy {
       currentQuestionIndex: null,
       questionExpiresAt: null,
       answeredUserIds: new Set(),
+      openedQuestionIndexes: new Set(),
       answersByQuestion: new Map(),
       closeTimer: null,
+      finishing: false,
       lastActivityAt: Date.now(),
     };
     this.rooms.set(roomCode, room);

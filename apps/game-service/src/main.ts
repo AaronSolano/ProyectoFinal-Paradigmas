@@ -7,6 +7,8 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import { IoAdapter } from "@nestjs/platform-socket.io";
 import { isAbsolute, join } from "path";
 import { AppModule } from "./app.module";
+import { enableBrowserCors } from "./http-cors";
+import { resolveListenPort } from "./listen-port";
 
 function resolveUploadDir(config: ConfigService): string {
   const configured = config.get<string>("UPLOAD_DIR", "./uploads");
@@ -16,6 +18,7 @@ function resolveUploadDir(config: ConfigService): string {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useWebSocketAdapter(new IoAdapter(app));
+  enableBrowserCors(app);
   const config = app.get(ConfigService);
 
   app.setGlobalPrefix("api", { exclude: ["uploads/(.*)"] });
@@ -53,8 +56,8 @@ async function bootstrap() {
     }),
   );
 
-  const port = config.get<number>("GAME_PORT", 3002);
-  await app.listen(port);
+  const port = resolveListenPort(process.env.PORT, config.get("GAME_PORT"), 3002);
+  await app.listen(port, "0.0.0.0");
 }
 
 bootstrap();

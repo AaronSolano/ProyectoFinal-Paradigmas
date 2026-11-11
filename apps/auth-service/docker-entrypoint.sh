@@ -8,6 +8,10 @@ fi
 
 export DATABASE_URL="$DATABASE_URL_AUTH"
 
+if [ -n "${PORT:-}" ]; then
+  export AUTH_PORT="$PORT"
+fi
+
 echo "[auth-service] Aplicando migraciones Prisma..."
 npx --yes prisma@6.19.3 migrate deploy --schema=./prisma/schema.prisma
 

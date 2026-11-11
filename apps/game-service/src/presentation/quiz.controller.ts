@@ -16,6 +16,7 @@ import { CreateQuestionDto } from "./dto/create-question.dto";
 import { CreateQuizDto } from "./dto/create-quiz.dto";
 import { UpdateQuestionDto } from "./dto/update-question.dto";
 import { UpdateQuizDto } from "./dto/update-quiz.dto";
+import { HostRoleGuard } from "./guards/host-role.guard";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 
 @ApiTags("quizzes")
@@ -26,6 +27,7 @@ export class QuizController {
   constructor(private readonly quizService: QuizService) {}
 
   @Post()
+  @UseGuards(HostRoleGuard)
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateQuizDto) {
     return this.quizService.createQuiz(user, dto);
   }
@@ -41,6 +43,7 @@ export class QuizController {
   }
 
   @Patch(":quizId")
+  @UseGuards(HostRoleGuard)
   update(
     @CurrentUser() user: AuthUser,
     @Param("quizId") quizId: string,
@@ -50,6 +53,7 @@ export class QuizController {
   }
 
   @Delete(":quizId")
+  @UseGuards(HostRoleGuard)
   remove(@CurrentUser() user: AuthUser, @Param("quizId") quizId: string) {
     return this.quizService.deleteQuiz(user, quizId);
   }
@@ -60,6 +64,7 @@ export class QuizController {
   }
 
   @Post(":quizId/questions")
+  @UseGuards(HostRoleGuard)
   addQuestion(
     @CurrentUser() user: AuthUser,
     @Param("quizId") quizId: string,
@@ -69,6 +74,7 @@ export class QuizController {
   }
 
   @Patch(":quizId/questions/:questionId")
+  @UseGuards(HostRoleGuard)
   updateQuestion(
     @CurrentUser() user: AuthUser,
     @Param("quizId") quizId: string,
@@ -79,6 +85,7 @@ export class QuizController {
   }
 
   @Delete(":quizId/questions/:questionId")
+  @UseGuards(HostRoleGuard)
   deleteQuestion(
     @CurrentUser() user: AuthUser,
     @Param("quizId") quizId: string,

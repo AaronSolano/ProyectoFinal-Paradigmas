@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
 import type {
@@ -20,6 +21,7 @@ import { LiveParticipant, LiveRoom } from "../../entities/live-room.types";
 import { GameSessionRepository } from "../../persistence/game-session.repository";
 import { QuizRepository } from "../../persistence/quiz.repository";
 import { GameEngineService } from "./game-engine.service";
+import { assertHost } from "../host-access";
 import { InMemoryRoomStore } from "./in-memory-room.store";
 
 export type RoomEventEmitter = {
@@ -37,6 +39,7 @@ export class RoomManagerService {
   ) {}
 
   async createLiveSession(host: AuthUser, quizId: string): Promise<{ roomCode: string }> {
+    assertHost(host);
     const quiz = await this.quizzes.findQuizById(quizId);
     if (!quiz) {
       throw new NotFoundException("Cuestionario no encontrado.");
@@ -122,11 +125,16 @@ export class RoomManagerService {
       throw new BadRequestException("Índice de pregunta inválido.");
     }
 
+    if (room.openedQuestionIndexes.has(questionIndex)) {
+      throw new BadRequestException("Esta pregunta ya fue abierta.");
+    }
+
     if (room.closeTimer) {
       clearTimeout(room.closeTimer);
       room.closeTimer = null;
     }
 
+    room.openedQuestionIndexes.add(questionIndex);
     room.currentQuestionIndex = questionIndex;
     room.status = SessionStatus.QUESTION_ACTIVE;
     room.answeredUserIds = new Set();
@@ -231,9 +239,21 @@ export class RoomManagerService {
     this.assertHost(host, room);
     this.store.touch(room);
 
+    this.assertReadyToFinish(room);
+
     if (room.closeTimer) {
       clearTimeout(room.closeTimer);
       room.closeTimer = null;
+    }
+
+    room.finishing = true;
+    try {
+      await this.sessions.persistFinishedSession(room);
+    } catch {
+      room.finishing = false;
+      throw new InternalServerErrorException(
+        "No se pudo guardar el resultado. La partida sigue abierta.",
+      );
     }
 
     room.status = SessionStatus.FINISHED;
@@ -248,11 +268,22 @@ export class RoomManagerService {
     };
 
     emit.toRoom(roomCode, WsEventNames.GAME_FINISH, payload);
-
-    await this.sessions.persistFinishedSession(room);
     this.store.deleteRoom(roomCode);
 
     return payload;
+  }
+
+  private assertReadyToFinish(room: LiveRoom): void {
+    if (room.finishing || room.status === SessionStatus.FINISHED) {
+      throw new BadRequestException("La partida ya finalizó.");
+    }
+    if (room.status === SessionStatus.QUESTION_ACTIVE) {
+      throw new BadRequestException("Hay una pregunta abierta.");
+    }
+    const allOpened = room.questions.every((_, index) => room.openedQuestionIndexes.has(index));
+    if (!allOpened || room.status !== SessionStatus.QUESTION_CLOSED) {
+      throw new BadRequestException("Aún hay preguntas pendientes.");
+    }
   }
 
   buildStateSync(room: LiveRoom, userId: string): RoomStateSyncPayload {
@@ -310,7 +341,9 @@ export class RoomManagerService {
   }
 
   private leaderboard(room: LiveRoom): LeaderboardEntry[] {
-    const sorted = [...room.participants.values()].sort((a, b) => {
+    const sorted = [...room.participants.values()]
+      .filter((participant) => participant.userId !== room.hostId)
+      .sort((a, b) => {
       if (b.score !== a.score) {
         return b.score - a.score;
       }

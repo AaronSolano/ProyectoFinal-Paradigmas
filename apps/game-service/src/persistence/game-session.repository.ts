@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { SessionStatus } from "@profelink/shared-dtos";
 import { LiveRoom } from "../entities/live-room.types";
 import { PrismaService } from "./prisma.service";
+import { finishedSessionsVisibleTo } from "./session-visibility";
 
 @Injectable()
 export class GameSessionRepository {
@@ -53,6 +54,32 @@ export class GameSessionRepository {
           });
         }
       }
+    });
+  }
+
+  listFinishedForUser(userId: string) {
+    return this.prisma.gameSession.findMany({
+      where: finishedSessionsVisibleTo(userId),
+      orderBy: { finishedAt: "desc" },
+      include: {
+        participants: {
+          select: { userId: true, displayName: true, finalScore: true },
+        },
+      },
+    });
+  }
+
+  findFinishedForUser(roomCode: string, userId: string) {
+    return this.prisma.gameSession.findFirst({
+      where: {
+        roomCode,
+        ...finishedSessionsVisibleTo(userId),
+      },
+      include: {
+        participants: {
+          select: { userId: true, displayName: true, finalScore: true },
+        },
+      },
     });
   }
 }
