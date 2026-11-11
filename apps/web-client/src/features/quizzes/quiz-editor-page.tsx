@@ -17,6 +17,8 @@ import {
   type QuizQuestion,
   type QuizSummary,
 } from "./quiz-api";
+import { CATEGORY_LABELS, CHALLENGE_CATEGORIES, type ChallengeCategoryCode } from "./catalog";
+import { isCategoryCode, newQuizCategoryError, publishBlockedReason } from "./quiz-library";
 import { questionTimeLimitError } from "./question-time";
 import { resolveQuizSelection } from "./quiz-selection";
 
@@ -29,6 +31,7 @@ export function QuizEditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<ChallengeCategoryCode | "">("");
   const [statement, setStatement] = useState("");
   const [correctAnswer, setCorrectAnswer] = useState(true);
   const [timeLimit, setTimeLimit] = useState("20");
@@ -66,6 +69,7 @@ export function QuizEditorPage() {
         setSelectedId(nextId);
         setTitle(chosen?.title ?? "");
         setDescription(chosen?.description ?? "");
+        setCategory(chosen?.category ?? "");
       })
       .catch((caught: unknown) => {
         if (!cancelled) {
@@ -116,18 +120,25 @@ export function QuizEditorPage() {
       setError("El título necesita al menos 3 caracteres.");
       return;
     }
+    const categoryError = newQuizCategoryError(category);
+    if (categoryError || !isCategoryCode(category)) {
+      setError(categoryError ?? "Elige una categoría para el cuestionario.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const created = await createQuiz(token, {
         title: nextTitle,
         description: description.trim() || undefined,
+        category,
       });
       setQuizzes((current) => [created, ...current]);
       setSelectedId(created.id);
       setQuestions([]);
       setTitle("");
       setDescription("");
+      setCategory("");
       setNotice("Cuestionario creado. Sigue siendo privado.");
     } catch (caught: unknown) {
       setError(caught instanceof HttpError ? caught.message : "No se pudo crear el cuestionario.");
@@ -153,6 +164,7 @@ export function QuizEditorPage() {
       const updated = await updateQuiz(token, selected.id, {
         title: nextTitle,
         description: description.trim() || undefined,
+        ...(isCategoryCode(category) ? { category } : {}),
       });
       setQuizzes((current) => current.map((quiz) => (quiz.id === updated.id ? updated : quiz)));
       setNotice("Cuestionario actualizado.");
@@ -247,6 +259,7 @@ export function QuizEditorPage() {
           setQuestions([]);
           setTitle(chosen?.title ?? "");
           setDescription(chosen?.description ?? "");
+          setCategory(chosen?.category ?? "");
           setEditingQuestionId(null);
         }
         setNotice("Cuestionario eliminado.");
@@ -263,10 +276,48 @@ export function QuizEditorPage() {
     }
   }
 
+  async function onTogglePublish() {
+    const token = readStoredToken();
+    if (!token || !selected) {
+      return;
+    }
+    const publishing = !selected.published;
+    if (publishing) {
+      const blocked = publishBlockedReason(questions.length);
+      if (blocked) {
+        setError(blocked);
+        return;
+      }
+      if (!isCategoryCode(category)) {
+        setError("Elige una categoría y guarda el cuestionario antes de publicarlo.");
+        return;
+      }
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await updateQuiz(token, selected.id, {
+        ...(isCategoryCode(category) ? { category } : {}),
+        published: publishing,
+      });
+      setQuizzes((current) => current.map((quiz) => (quiz.id === updated.id ? updated : quiz)));
+      setNotice(
+        publishing
+          ? "Cuestionario publicado. Otros profesores ya pueden verlo y copiarlo."
+          : "Cuestionario privado de nuevo.",
+      );
+    } catch (caught: unknown) {
+      setError(caught instanceof HttpError ? caught.message : "No se pudo cambiar la publicación.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function selectQuiz(quiz: QuizSummary) {
     setSelectedId(quiz.id);
     setTitle(quiz.title);
     setDescription(quiz.description ?? "");
+    setCategory(quiz.category ?? "");
     setEditingQuestionId(null);
     setPendingDelete((current) => (current?.kind === "quiz" ? null : current));
   }
@@ -308,6 +359,7 @@ export function QuizEditorPage() {
               setSelectedId(null);
               setTitle("");
               setDescription("");
+              setCategory("");
               setQuestions([]);
               setEditingQuestionId(null);
             }}
@@ -322,6 +374,22 @@ export function QuizEditorPage() {
             <label className="text-sm text-white/80">
               Descripción
               <textarea className={fieldClass} value={description} rows={2} onChange={(event) => setDescription(event.target.value)} />
+            </label>
+            <label className="text-sm text-white/80">
+              Categoría
+              <select
+                aria-required="true"
+                className={fieldClass}
+                value={category}
+                onChange={(event) => setCategory(event.target.value as ChallengeCategoryCode | "")}
+              >
+                <option value="">Elige una categoría</option>
+                {CHALLENGE_CATEGORIES.map((code) => (
+                  <option key={code} value={code}>
+                    {CATEGORY_LABELS[code]}
+                  </option>
+                ))}
+              </select>
             </label>
             <button
               className="rounded-2xl bg-vx-cyan px-4 py-3 font-semibold text-ink disabled:opacity-50"
@@ -385,6 +453,20 @@ export function QuizEditorPage() {
             <div className="grid gap-5 lg:h-full lg:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
               <div className="lg:min-h-0 lg:overflow-y-auto lg:pr-1">
                 <h3 className="text-2xl font-semibold">Preguntas de {selected.title}</h3>
+                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-panel/50 px-4 py-3">
+                  <p className="text-sm text-white/80" data-testid="publish-state">
+                    {selected.published ? "Publicado en la biblioteca" : "Privado"}
+                    {selected.category ? ` · ${CATEGORY_LABELS[selected.category]}` : " · Sin categoría"}
+                  </p>
+                  <button
+                    className="rounded-xl border border-vx-magenta/60 px-3 py-2 text-sm text-vx-magenta disabled:opacity-50"
+                    disabled={busy}
+                    type="button"
+                    onClick={() => void onTogglePublish()}
+                  >
+                    {selected.published ? "Volver privado" : "Publicar en la biblioteca"}
+                  </button>
+                </div>
                 <ul className="mt-4 grid gap-3">
                   {questions.map((question) => (
                     <li className="rounded-2xl border border-white/10 bg-panel/70 px-4 py-3" key={question.id}>

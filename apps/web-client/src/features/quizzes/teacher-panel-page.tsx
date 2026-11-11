@@ -28,6 +28,15 @@ export function TeacherPanelPage() {
           </span>
         </Link>
         <Link
+          className="rounded-2xl border border-vx-cyan/30 bg-white/5 p-5 hover:border-vx-cyan hover:shadow-neon"
+          to={paths.teacherLibrary}
+        >
+          <span className="block text-xl font-semibold text-white">Biblioteca de cuestionarios</span>
+          <span className="mt-2 block text-base text-white/75">
+            Consulta cuestionarios publicados por otros profesores y copia uno completo.
+          </span>
+        </Link>
+        <Link
           className="rounded-2xl border border-white/20 bg-white/5 p-5 hover:border-vx-cyan hover:shadow-neon"
           to={paths.teacherStart}
         >

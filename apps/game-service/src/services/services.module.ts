@@ -1,15 +1,17 @@
-import { Module } from "@nestjs/common";
+﻿import { Module } from "@nestjs/common";
 import { GameEngineService } from "./realtime/game-engine.service";
 import { InMemoryRoomStore } from "./realtime/in-memory-room.store";
 import { RoomManagerService } from "./realtime/room-manager.service";
 import { LocalStorageService } from "./local-storage.service";
 import { ChallengeBankService } from "./challenge-bank.service";
+import { QuizLibraryService } from "./quiz-library.service";
 import { QuizService } from "./quiz.service";
 import { SessionResultsService } from "./session-results.service";
 
 @Module({
   providers: [
     QuizService,
+    QuizLibraryService,
     ChallengeBankService,
     SessionResultsService,
     LocalStorageService,
@@ -19,6 +21,7 @@ import { SessionResultsService } from "./session-results.service";
   ],
   exports: [
     QuizService,
+    QuizLibraryService,
     ChallengeBankService,
     SessionResultsService,
     LocalStorageService,
@@ -28,3 +31,4 @@ import { SessionResultsService } from "./session-results.service";
   ],
 })
 export class ServicesModule {}
+

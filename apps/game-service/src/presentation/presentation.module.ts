@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+﻿import { Module } from "@nestjs/common";
 import { PassportModule } from "@nestjs/passport";
 import { ServicesModule } from "../services/services.module";
 import { WsExceptionFilter } from "./filters/ws-exception.filter";
@@ -7,6 +7,7 @@ import { WsJwtGuard } from "./guards/ws-jwt.guard";
 import { ChallengeCopyController } from "./challenge-copy.controller";
 import { ChallengePromptController } from "./challenge-prompt.controller";
 import { LiveSessionController } from "./live-session.controller";
+import { QuizLibraryController } from "./quiz-library.controller";
 import { QuizController } from "./quiz.controller";
 import { SessionResultsController } from "./session-results.controller";
 import { UploadController } from "./upload.controller";
@@ -16,6 +17,7 @@ import { JwtAudienceStrategy } from "./strategies/jwt-audience.strategy";
   imports: [PassportModule.register({ defaultStrategy: "jwt" }), ServicesModule],
   controllers: [
     QuizController,
+    QuizLibraryController,
     ChallengePromptController,
     ChallengeCopyController,
     UploadController,
@@ -25,3 +27,4 @@ import { JwtAudienceStrategy } from "./strategies/jwt-audience.strategy";
   providers: [JwtAudienceStrategy, GameGateway, WsJwtGuard, WsExceptionFilter],
 })
 export class PresentationModule {}
+

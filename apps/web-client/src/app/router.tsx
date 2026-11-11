@@ -9,6 +9,7 @@ import { StudentJoinPage } from "../features/live/student-join-page";
 import { StudentPanelPage } from "../features/live/student-panel-page";
 import { HostHistoryDetailPage, HostHistoryPage, StudentHistoryDetailPage, StudentHistoryPage } from "../features/results/history-pages";
 import { ExplorePage } from "../features/quizzes/explore-page";
+import { LibraryPage } from "../features/quizzes/library-page";
 import { QuizEditorPage } from "../features/quizzes/quiz-editor-page";
 import { TeacherPanelPage } from "../features/quizzes/teacher-panel-page";
 import { homePathForRole, paths } from "../shared/paths";
@@ -47,6 +48,14 @@ export function AppRoutes() {
         element={
           <RequireRole role={UserRole.HOST}>
             <ExplorePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path={paths.teacherLibrary}
+        element={
+          <RequireRole role={UserRole.HOST}>
+            <LibraryPage />
           </RequireRole>
         }
       />

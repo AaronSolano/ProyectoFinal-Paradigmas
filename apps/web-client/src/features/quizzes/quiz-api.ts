@@ -1,13 +1,34 @@
 import { gameRequest } from "../../shared/game-api";
 import { readClientEnv } from "../../shared/env";
 import { requestForm } from "../../shared/http";
-import { challengePromptPath, type PromptFilters } from "./catalog";
+import { challengePromptPath, type ChallengeCategoryCode, type PromptFilters } from "./catalog";
 
 export type QuizSummary = {
   id: string;
   ownerId: string;
   title: string;
   description: string | null;
+  /** Hyphenated code; null for quizzes created before the library existed. */
+  category?: ChallengeCategoryCode | null;
+  published?: boolean;
+};
+
+export type LibraryQuizSummary = QuizSummary & {
+  category: ChallengeCategoryCode | null;
+  published: boolean;
+  questionCount: number;
+};
+
+export type LibraryQuizPage = {
+  items: LibraryQuizSummary[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+export type LibraryQuizDetail = QuizSummary & {
+  category: ChallengeCategoryCode | null;
+  questions: QuizQuestion[];
 };
 
 export type QuizQuestion = {
@@ -43,7 +64,7 @@ export function listQuizzes(token: string): Promise<QuizSummary[]> {
 
 export function createQuiz(
   token: string,
-  body: { title: string; description?: string },
+  body: { title: string; description?: string; category: ChallengeCategoryCode },
 ): Promise<QuizSummary> {
   return gameRequest<QuizSummary>("/api/quizzes", token, { method: "POST", body });
 }
@@ -51,7 +72,12 @@ export function createQuiz(
 export function updateQuiz(
   token: string,
   quizId: string,
-  body: { title?: string; description?: string },
+  body: {
+    title?: string;
+    description?: string;
+    category?: ChallengeCategoryCode;
+    published?: boolean;
+  },
 ): Promise<QuizSummary> {
   return gameRequest<QuizSummary>(`/api/quizzes/${quizId}`, token, { method: "PATCH", body });
 }
@@ -114,6 +140,20 @@ export function copyPrompts(
   return gameRequest<QuizQuestion[]>(`/api/quizzes/${quizId}/questions/from-bank`, token, {
     method: "POST",
     body: { promptIds },
+  });
+}
+
+export function listLibraryQuizzes(token: string, path: string): Promise<LibraryQuizPage> {
+  return gameRequest<LibraryQuizPage>(path, token);
+}
+
+export function getLibraryQuiz(token: string, quizId: string): Promise<LibraryQuizDetail> {
+  return gameRequest<LibraryQuizDetail>(`/api/library/quizzes/${quizId}`, token);
+}
+
+export function copyLibraryQuiz(token: string, quizId: string): Promise<LibraryQuizDetail> {
+  return gameRequest<LibraryQuizDetail>(`/api/library/quizzes/${quizId}/copy`, token, {
+    method: "POST",
   });
 }
 

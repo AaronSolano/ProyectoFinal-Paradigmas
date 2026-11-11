@@ -1,10 +1,12 @@
-import {
+﻿import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Question, Quiz } from "@profelink/game-prisma";
+import { Prisma, Question, Quiz } from "@profelink/game-prisma";
 import { AuthUser } from "../entities/auth-user";
+import { CATEGORY_CODE_TO_ENUM, QuizView, toQuizView } from "../persistence/quiz-category";
 import { QuizRepository } from "../persistence/quiz.repository";
 import { CreateQuestionDto } from "../presentation/dto/create-question.dto";
 import { CreateQuizDto } from "../presentation/dto/create-quiz.dto";
@@ -16,44 +18,62 @@ import { assertHost } from "./host-access";
 export class QuizService {
   constructor(private readonly quizzes: QuizRepository) {}
 
-  async createQuiz(user: AuthUser, dto: CreateQuizDto): Promise<Quiz> {
+  async createQuiz(user: AuthUser, dto: CreateQuizDto): Promise<QuizView> {
     assertHost(user);
-    return this.quizzes.createQuiz({
+    const quiz = await this.quizzes.createQuiz({
       title: dto.title,
       description: dto.description,
+      category: dto.category ? CATEGORY_CODE_TO_ENUM[dto.category] : undefined,
+      published: false,
       ownerId: user.userId,
     });
+    return toQuizView(quiz);
   }
 
-  listQuizzes(user: AuthUser): Promise<Quiz[]> {
-    return this.quizzes.listQuizzesByOwner(user.userId);
+  async listQuizzes(user: AuthUser): Promise<QuizView[]> {
+    assertHost(user);
+    const quizzes = await this.quizzes.listQuizzesByOwner(user.userId);
+    return quizzes.map(toQuizView);
   }
 
-  async getQuiz(user: AuthUser, quizId: string): Promise<Quiz> {
-    const quiz = await this.requireQuiz(quizId);
-    this.assertOwner(user, quiz);
-    return quiz;
+  async getQuiz(user: AuthUser, quizId: string): Promise<QuizView> {
+    return toQuizView(await this.getOwnedQuiz(user, quizId));
   }
 
-  async updateQuiz(user: AuthUser, quizId: string, dto: UpdateQuizDto): Promise<Quiz> {
+  async updateQuiz(user: AuthUser, quizId: string, dto: UpdateQuizDto): Promise<QuizView> {
     assertHost(user);
     const quiz = await this.requireQuiz(quizId);
     this.assertOwner(user, quiz);
-    return this.quizzes.updateQuiz(quizId, {
+
+    const data: Prisma.QuizUpdateInput = {
       title: dto.title,
       description: dto.description,
-    });
+      category: dto.category ? CATEGORY_CODE_TO_ENUM[dto.category] : undefined,
+    };
+    if (dto.published === true && !quiz.published) {
+      if ((await this.quizzes.countQuestions(quizId)) === 0) {
+        throw new BadRequestException(
+          "No se puede publicar un cuestionario sin preguntas.",
+        );
+      }
+      data.published = true;
+      data.publishedAt = new Date();
+    } else if (dto.published === false && quiz.published) {
+      data.published = false;
+      data.publishedAt = null;
+    }
+    return toQuizView(await this.quizzes.updateQuiz(quizId, data));
   }
 
-  async deleteQuiz(user: AuthUser, quizId: string): Promise<Quiz> {
+  async deleteQuiz(user: AuthUser, quizId: string): Promise<QuizView> {
     assertHost(user);
     const quiz = await this.requireQuiz(quizId);
     this.assertOwner(user, quiz);
-    return this.quizzes.deleteQuiz(quizId);
+    return toQuizView(await this.quizzes.deleteQuiz(quizId));
   }
 
   async listQuestions(user: AuthUser, quizId: string): Promise<Question[]> {
-    await this.getQuiz(user, quizId);
+    await this.getOwnedQuiz(user, quizId);
     return this.quizzes.listQuestionsByQuiz(quizId);
   }
 
@@ -63,7 +83,7 @@ export class QuizService {
     dto: CreateQuestionDto,
   ): Promise<Question> {
     assertHost(user);
-    await this.getQuiz(user, quizId);
+    await this.getOwnedQuiz(user, quizId);
     return this.quizzes.createQuestion({
       quiz: { connect: { id: quizId } },
       statement: dto.statement,
@@ -81,7 +101,7 @@ export class QuizService {
     dto: UpdateQuestionDto,
   ): Promise<Question> {
     assertHost(user);
-    await this.getQuiz(user, quizId);
+    await this.getOwnedQuiz(user, quizId);
     const question = await this.requireQuestion(questionId, quizId);
     return this.quizzes.updateQuestion(question.id, {
       statement: dto.statement,
@@ -98,9 +118,16 @@ export class QuizService {
     questionId: string,
   ): Promise<Question> {
     assertHost(user);
-    await this.getQuiz(user, quizId);
+    await this.getOwnedQuiz(user, quizId);
     const question = await this.requireQuestion(questionId, quizId);
     return this.quizzes.deleteQuestion(question.id);
+  }
+
+  private async getOwnedQuiz(user: AuthUser, quizId: string): Promise<Quiz> {
+    assertHost(user);
+    const quiz = await this.requireQuiz(quizId);
+    this.assertOwner(user, quiz);
+    return quiz;
   }
 
   private async requireQuiz(quizId: string): Promise<Quiz> {
@@ -128,3 +155,7 @@ export class QuizService {
     }
   }
 }
+
+
+
+

@@ -6,9 +6,12 @@
     "build": "pnpm --filter @profelink/shared-dtos build && pnpm --filter @profelink/auth-service build && pnpm --filter @profelink/game-service build",
     "dev": "pnpm -r --parallel --if-present dev",
     "lint": "pnpm -r --if-present lint",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "playwright test",
+    "verify": "pwsh -File scripts/verify-all.ps1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2"
   },

@@ -5,6 +5,7 @@ export const paths = {
   teacher: "/profesor",
   teacherCreate: "/profesor/crear",
   teacherExplore: "/profesor/explora",
+  teacherLibrary: "/profesor/biblioteca",
   teacherStart: "/profesor/iniciar",
   teacherHistory: "/profesor/historial",
   student: "/estudiante",

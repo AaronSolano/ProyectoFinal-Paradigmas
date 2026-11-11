@@ -8,6 +8,7 @@ import {
   WebSocketServer,
 } from "@nestjs/websockets";
 import { Logger, UseFilters, UseGuards } from "@nestjs/common";
+import { metrics } from "@opentelemetry/api";
 import type {
   GameCloseQuestionPayload,
   GameFinishPayload,
@@ -25,7 +26,15 @@ import {
 import { WsJwtGuard } from "../guards/ws-jwt.guard";
 import { WsExceptionFilter } from "../filters/ws-exception.filter";
 
-type AuthedSocket = Socket & { data: { user?: AuthUser; roomCode?: string } };
+const meter = metrics.getMeter("game-service.gateway");
+const activeConnections = meter.createUpDownCounter("profelink.ws.active_connections", {
+  description: "Conexiones Socket.io autenticadas activas",
+});
+const answersSubmitted = meter.createCounter("profelink.game.answers_submitted", {
+  description: "Respuestas V/F enviadas por WebSocket",
+});
+
+type AuthedSocket = Socket & { data: { user?: AuthUser; roomCode?: string; counted?: boolean } };
 
 @WebSocketGateway({
   cors: { origin: true, credentials: true },
@@ -53,7 +62,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: AuthedSocket): void {
-    void client.data.roomCode;
+    if (client.data.counted) {
+      client.data.counted = false;
+      activeConnections.add(-1);
+    }
   }
 
   @UseGuards(WsJwtGuard)
@@ -119,6 +131,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!roomCode) {
       return;
     }
+    answersSubmitted.add(1);
     this.rooms.submitAnswer(user, roomCode, payload.answer, this.emitter(), client.id);
   }
 
