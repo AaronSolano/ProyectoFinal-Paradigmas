@@ -1,3 +1,4 @@
+import type { UserRole } from "@profelink/shared-dtos";
 import { readClientEnv } from "../../shared/env";
 import { HttpError, requestJson } from "../../shared/http";
 import { sessionFromToken, type SessionUser } from "../../shared/session";
@@ -27,4 +28,20 @@ export async function loginRequest(email: string, password: string): Promise<{ a
   }
 
   return { accessToken: body.accessToken, user };
+}
+
+export type RegisterInput = {
+  email: string;
+  password: string;
+  displayName: string;
+  role: UserRole;
+};
+
+/** Crea la cuenta. El servicio no devuelve token, así que luego hay que iniciar sesión. */
+export async function registerRequest(input: RegisterInput): Promise<void> {
+  const { authApiUrl } = readClientEnv();
+  await requestJson<unknown>(`${authApiUrl}/api/auth/register`, {
+    method: "POST",
+    body: input,
+  });
 }

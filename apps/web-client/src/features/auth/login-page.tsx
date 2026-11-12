@@ -1,9 +1,9 @@
 import { UserRole } from "@profelink/shared-dtos";
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HttpError } from "../../shared/http";
 import { consumeReturnPath } from "../live/return-path";
-import { homePathForRole } from "../../shared/paths";
+import { homePathForRole, paths } from "../../shared/paths";
 import { VerixMark } from "../../shared/verix-mark";
 import { useAuth } from "./auth-context";
 
@@ -76,6 +76,12 @@ export function LoginPage() {
             {pending ? "Entrando…" : "Entrar"}
           </button>
         </form>
+        <p className="mt-6 text-center text-sm text-white/70">
+          ¿No tienes cuenta?{" "}
+          <Link className="font-semibold text-vx-cyan hover:underline" to={paths.register}>
+            Crear cuenta
+          </Link>
+        </p>
       </section>
     </main>
   );

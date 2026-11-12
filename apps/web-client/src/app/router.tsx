@@ -2,6 +2,7 @@ import { UserRole } from "@profelink/shared-dtos";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { GuestOnly, RequireRole } from "../features/auth/require-role";
 import { LoginPage } from "../features/auth/login-page";
+import { RegisterPage } from "../features/auth/register-page";
 import { HostLobbyPage } from "../features/live/host-lobby-page";
 import { StartMatchPage } from "../features/live/start-match-page";
 import { StudentJoinPage } from "../features/live/student-join-page";
@@ -24,6 +25,14 @@ export function AppRoutes() {
         element={
           <GuestOnly>
             <LoginPage />
+          </GuestOnly>
+        }
+      />
+      <Route
+        path={paths.register}
+        element={
+          <GuestOnly>
+            <RegisterPage />
           </GuestOnly>
         }
       />

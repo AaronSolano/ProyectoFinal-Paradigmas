@@ -88,4 +88,86 @@ describe("rutas de acceso", () => {
     expect(debug).not.toHaveBeenCalled();
     expect(screen.getByRole("alert").textContent).not.toContain("clave-incorrecta");
   });
+
+  it("lleva del ingreso al registro y vuelve", () => {
+    renderAt("/ingresar");
+    fireEvent.click(screen.getByRole("link", { name: "Crear cuenta" }));
+    expect(screen.getByLabelText("Repite la contraseña")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: "Inicia sesión" }));
+    expect(screen.getByRole("button", { name: "Entrar" })).toBeInTheDocument();
+  });
+
+  it("crea la cuenta, inicia sesión y abre el panel del rol elegido", async () => {
+    const userId = "33333333-3333-3333-3333-333333333333";
+    const token = unsignedToken({
+      sub: userId,
+      email: "nueva@profelink.cr",
+      displayName: "Profe Nueva",
+      role: UserRole.HOST,
+      aud: "profelink-game-api",
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, status: 201, text: async () => JSON.stringify({ id: userId }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ accessToken: token, user: { id: userId, role: UserRole.HOST } }),
+      })
+      .mockResolvedValue({ ok: true, status: 200, text: async () => "[]" });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderAt("/registro");
+    fireEvent.click(screen.getByLabelText(/Profesor/));
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "  Profe Nueva " } });
+    fireEvent.change(screen.getByLabelText("Correo"), { target: { value: "nueva@profelink.cr" } });
+    fireEvent.change(screen.getByLabelText("Contraseña"), { target: { value: "clave-segura-1" } });
+    fireEvent.change(screen.getByLabelText("Repite la contraseña"), { target: { value: "clave-segura-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+    expect(await screen.findByRole("heading", { name: "Mesa de control" })).toBeInTheDocument();
+    const [registerUrl, registerInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(registerUrl).toMatch(/\/api\/auth\/register$/);
+    expect(JSON.parse(registerInit.body as string)).toEqual({
+      email: "nueva@profelink.cr",
+      password: "clave-segura-1",
+      displayName: "Profe Nueva",
+      role: UserRole.HOST,
+    });
+    expect(fetchMock.mock.calls[1][0]).toMatch(/\/api\/auth\/login$/);
+    expect(sessionStorage.getItem("verix.accessToken")).toBe(token);
+  });
+
+  it("no envía el registro si las contraseñas no coinciden", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    renderAt("/registro");
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Ana" } });
+    fireEvent.change(screen.getByLabelText("Correo"), { target: { value: "ana@profelink.cr" } });
+    fireEvent.change(screen.getByLabelText("Contraseña"), { target: { value: "clave-segura-1" } });
+    fireEvent.change(screen.getByLabelText("Repite la contraseña"), { target: { value: "otra-clave-22" } });
+    fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Las contraseñas no coinciden.");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("muestra el aviso del servicio cuando el correo ya existe", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        text: async () => JSON.stringify({ message: "El correo electrónico ya está registrado.", statusCode: 409 }),
+      }),
+    );
+    renderAt("/registro");
+    fireEvent.change(screen.getByLabelText("Nombre"), { target: { value: "Ana" } });
+    fireEvent.change(screen.getByLabelText("Correo"), { target: { value: "ana@profelink.cr" } });
+    fireEvent.change(screen.getByLabelText("Contraseña"), { target: { value: "clave-segura-1" } });
+    fireEvent.change(screen.getByLabelText("Repite la contraseña"), { target: { value: "clave-segura-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("El correo electrónico ya está registrado.");
+  });
 });

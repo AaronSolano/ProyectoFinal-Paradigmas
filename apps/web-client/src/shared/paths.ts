@@ -2,6 +2,7 @@ import { UserRole } from "@profelink/shared-dtos";
 
 export const paths = {
   login: "/ingresar",
+  register: "/registro",
   teacher: "/profesor",
   teacherCreate: "/profesor/crear",
   teacherExplore: "/profesor/explora",
